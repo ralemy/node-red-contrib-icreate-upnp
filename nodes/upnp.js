@@ -3,6 +3,8 @@
  * Sets up a Upnp Server and accepts connections
  */
 
+"use strict";
+
 var peerPromise = null;
 var robots = {};
 
@@ -58,14 +60,14 @@ function RobotFinder(urn, serial, timeout) {
     this.timeout = timeout;
     this.defer = q.defer();
     this.promise = this.defer.promise;
-    this.removeOld(urn,serial).then(function (peer) {
+    this.removeOld(urn, serial).then(function (peer) {
         self.peer = peer;
         self.find();
     });
 }
 
 RobotFinder.prototype = {
-    removeOld:function(urn,serial){
+    removeOld: function (urn, serial) {
         return peerPromise.then(function (peer) {
             if (!robots[urn][serial])
                 return peer;
@@ -92,20 +94,20 @@ RobotFinder.prototype = {
                 message: "Timed out waiting for device: " + self.serial + " on urn: " + self.urn
             });
             self.off();
-        },this.timeout);
+        }, this.timeout);
     },
-    waitForUrn:function(){
-        var self=this;
+    waitForUrn: function () {
+        var self = this;
         this.peer.on(this.urn, function (service) {
             registerRobot(self.peer, self.urn, service);
-            if (self.timer && service.device.serialNumber === self.serial){
+            if (self.timer && service.device.serialNumber === self.serial) {
                 self.defer.resolve(robots[self.urn][self.serial]);
-                self.off();                
+                self.off();
             }
         });
     },
-    watchForBindError:function(){
-        var self=this;
+    watchForBindError: function () {
+        var self = this;
         this.peer.once("deviceBindError", function (err) {
             delete robots[self.urn][self.serial];
             self.defer.reject({
@@ -116,14 +118,65 @@ RobotFinder.prototype = {
             self.off();
         });
     },
-    off:function(){
+    off: function () {
         this.peer.removeAllListeners(this.urn);
         this.peer.removeAllListeners("deviceBindError");
         clearTimeout(this.timer);
-        this.timer=null;
+        this.timer = null;
     }
 };
 
+class UpnpRemotes{
+    constructor(){
+        this._remotes = {};
+    }
+}
+
+class UpnpServer {
+    static  getPeer(port,endPoint){
+        if(!UpnpServer._peerPromise)
+            UpnpServer._peerPromise = UpnpServer.getServer(port,endPoint);
+        return UpnpServer._peerPromise;
+    }
+    static get Remotes(){
+        return UpnpServer._remotes;
+    }
+    static getServer(port, endPoint) {
+        const peer = q.defer(),
+            server = http.createServer();
+        server.on("listening", function () {
+            peer.resolve(UpnPServer.createPeer(server, endPoint));
+        }).on("error", function (err) {
+            console.log("Http UPNP Server Closed");
+            peer.reject(err);
+        }).on("close", function () {
+            console.log("Server closed");
+        });
+        server.listen(port);
+        return peer.promise;
+    }
+
+    static createPeer(server, endPoint) {
+        const defer = q.defer(),
+            peer = upnp.createPeer({
+                prefix: endPoint,
+                server: server
+            }).on("ready", function (peer) {
+                peer.on("found", function () {
+                    console.log("Found", arguments);
+                });
+                UpnpServer._remotes = new UpnpRemotes();
+                defer.resolve(peer);
+            }).on("error", function (err) {
+                console.log("Error in Peer", err);
+            }).on("close", function () {
+                console.log("High level close");
+                peer.emit("closeServices");
+                peerPromise = null;
+            }).start();
+        return defer.promise;
+    }
+}
 
 function createPeer(server, endPoint) {
     var defer = q.defer(),
@@ -146,11 +199,12 @@ function createPeer(server, endPoint) {
 }
 
 function createServer(port, endPoint) {
-    var peer = q.defer();
-    server = http.createServer();
+    var peer = q.defer(),
+        server = http.createServer();
     server.on("listening", function () {
         peer.resolve(createPeer(server, endPoint));
     }).on("error", function (err) {
+        console.log("Http UPNP Server Closed");
         peer.reject(err);
     }).on("close", function () {
         console.log("Server closed");
@@ -251,6 +305,7 @@ var Robot = {
         return value || parseInt(config[key]) || 0;
     }
 };
+
 module.exports = {
     getPeer: function (port, endPoint, urn) {
         if (!peerPromise)
