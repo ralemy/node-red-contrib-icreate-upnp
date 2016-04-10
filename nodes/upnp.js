@@ -96,7 +96,7 @@ RobotFinder.prototype = {
     },
     waitForUrn:function(){
         var self=this;
-        this.peer.on(urn, function (service) {
+        this.peer.on(this.urn, function (service) {
             registerRobot(self.peer, self.urn, service);
             if (self.timer && service.device.serialNumber === self.serial){
                 self.defer.resolve(robots[self.urn][self.serial]);
