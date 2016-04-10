@@ -2,11 +2,17 @@
     RED.nodes.registerType('upnp-instance', {
         category: 'config',
         defaults: {
-            port: {value: "8090", required: true},
-            prefix: {value: "/upnp", required: true},
-            domain: {value: "schemas-impinj-com", required: true},
-            serviceType: {value: "SVLRobot", required: true},
-            serviceVersion: {value: "1", required: true}
+            port: {value: RED.settings.upnp ? RED.settings.upnp.port || "8090" : "8090", required: true},
+            prefix: {value: RED.settings.upnp ? RED.settings.upnp.prefix || "/upnp" : "/upnp", required: true},
+            domain: {
+                value: RED.settings.upnp ? RED.settings.upnp.domain || "schemas-impinj-com" : "schemas-impinj-com",
+                required: true
+            },
+            serviceType: {
+                value: RED.settings.upnp ? RED.settings.upnp.serviceType || "SVLRobot" : "SVLRobot",
+                required: true
+            },
+            serviceVersion: {value: RED.settings.upnp ? RED.settings.upnp.serviceVersion || "1" : "1", required: true}
         },
         label: function () {
             return [this.domain, this.serviceType, this.serviceVersion].join(":");
@@ -35,10 +41,12 @@
      <label for="node-input-serviceVersion"><i class="fa fa-tag"></i> Version</label>
      <input type="text" id="node-config-input-serviceVersion" placeholder="UPNP Version">
  </div>
+
 </script>
 
 <script type="text/x-red" data-help-name="upnp-instance">
     <p>Keeps Information about a UPNP service</p>
+
 
 
 </script>
