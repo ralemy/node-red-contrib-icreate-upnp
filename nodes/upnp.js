@@ -44,7 +44,7 @@ function registerRobot(peer, urn, service) {
         });
         peer.once("closeServices", function (target) {
             if (!target || target === robot) {
-                robot.service.removeAllListeners();
+                robot.service.removeAllListeners("event");
             }
         });
         return deferred.promise;
