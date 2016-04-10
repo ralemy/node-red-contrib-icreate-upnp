@@ -1,26 +1,26 @@
 /*******************************************************************************
- * 
+ *
  * Copyright (c) 2013 Louay Bassbouss, Fraunhofer FOKUS, All rights reserved.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3.0 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library. If not, see <http://www.gnu.org/licenses/>. 
- * 
+ * License along with this library. If not, see <http://www.gnu.org/licenses/>.
+ *
  * AUTHORS: Louay Bassbouss (louay.bassbouss@fokus.fraunhofer.de)
  *     Martin Lasak (martin.lasak@fokus.fraunhofer.de)
  *     Alexander Futasz (alexander.futasz@fokus.fraunhofer.de)
  *
  ******************************************************************************/
- 
+
 var os = require('os');
 var fs = require('fs');
 var ejs = require('ejs');
@@ -98,6 +98,11 @@ var Peer = function(options){
 					if (nt == ROOT_DEVICE) {
 						self.emit(ROOT_DEVICE,device);
 					}
+				});
+				self.remoteDevices[udn].on("bindError",function(err){
+					delete self.remoteDevices[udn];
+					console.log("Device error",udn, err);
+					self.emit("deviceBindError",err);
 				});
 			}
 		}
@@ -222,11 +227,11 @@ var createStub = function(controlUrl,serviceType, actionName){
 		};
 		if (typeof callback == "function") {
 			httpRequest(opt, soap, function(err, xml) {
-                if(err){
-                    var result = new UPnPError("HTTP Request Error:"+(err.message ||""));
-                    callback.call(null,result);
-                    return;
-                }
+				if(err){
+					var result = new UPnPError("HTTP Request Error:"+(err.message ||""));
+					callback.call(null,result);
+					return;
+				}
 				xml2js.parseString(xml,{mergeAttrs: true, explicitArray: false, ignoreXmlns: true, ignoreAttrs: true},function(err,json){
 					var result;
 					if (err) {
@@ -259,16 +264,16 @@ var createStub = function(controlUrl,serviceType, actionName){
 };
 
 /*Peer.prototype.bindDevice = function(descUrl, callback){
-	var client = rest(descUrl);
-	client.then(function(rsp) {
-		xml2js.parseString(rsp.entity, {explicitArray: false, ignoreXmlns: true, mergeAttrs: true},function (err, json) {
-			var options = json.root.device;
-			if (typeof callback == "function") {
-				callback.call(null, new RemoteDevice(descUrl,options));
-			}
-	    });
-	});
-};*/
+ var client = rest(descUrl);
+ client.then(function(rsp) {
+ xml2js.parseString(rsp.entity, {explicitArray: false, ignoreXmlns: true, mergeAttrs: true},function (err, json) {
+ var options = json.root.device;
+ if (typeof callback == "function") {
+ callback.call(null, new RemoteDevice(descUrl,options));
+ }
+ });
+ });
+ };*/
 
 var Device = function(peer, options){
 	this.peer = peer;
@@ -317,7 +322,7 @@ Device.prototype.removeService = function(serviceType){
 
 var Service = function(device, options){
 	this.device = device;
-	this.domain = options.domain || this.device.domain || null; 
+	this.domain = options.domain || this.device.domain || null;
 	this.type = options.type || null;
 	this.version = options.version || "1";
 	this.serviceId = options.serviceId || ("urn:"+(this.domain || "")+":serviceId:"+(this.type || ""));
@@ -397,7 +402,8 @@ RemoteDevice.prototype.bind = function(callback){
 	var self = this;
 	httpRequest(this.descriptionUrl, function(err, data) {
 		if (err) {
-			console.error("err: failed to get device description");
+			console.error("err: failed to get device description",err);
+			self.emit("bindError",err);
 			return;
 		}
 		xml2js.parseString(data, {explicitArray: false, ignoreXmlns: true, mergeAttrs: true},function (err, json) {
@@ -425,13 +431,13 @@ RemoteDevice.prototype.bind = function(callback){
 			self.services = {};
 			var serviceList = options.serviceList && options.serviceList.service || [];
 			serviceList = serviceList instanceof Array? serviceList: [serviceList];
-			
+
 			for ( var i in serviceList) {
 				var options = serviceList[i];
 				options.SCPDURL = URL.resolve(self.descriptionUrl, options.SCPDURL);
 				options.controlURL = URL.resolve(self.descriptionUrl, options.controlURL);
 				options.eventSubURL = URL.resolve(self.descriptionUrl, options.eventSubURL);
-				
+
 				var service = new RemoteService(self,options);
 				self.services[service.serviceType] = service;
 			}
@@ -458,7 +464,7 @@ var RemoteService = function(device, options){
 	this.actions = null;
 	this.variables = null;
 	this.timeoutHandle = null;
-	
+
 	this.on("newListener",function(event, listener){
 		if (event == "event" && this.listeners("event") == 0) {
 			subscribe(this);
@@ -480,8 +486,8 @@ RemoteService.prototype.bind = function(callback){
 		this.variables = {};
 		httpRequest(this.SCPDURL, function(err, data) {
 			xml2js.parseString(data, {explicitArray: false, ignoreXmlns: true, mergeAttrs: true}, function (err, json) {
-			    var proxy = {};
-			    proxy.SCPD = json && json.scpd || {};
+				var proxy = {};
+				proxy.SCPD = json && json.scpd || {};
 				var variables = json && json.scpd && json.scpd.serviceStateTable && json.scpd.serviceStateTable.stateVariable || [];
 				variables = variables instanceof Array? variables: [variables];
 				for ( var i = 0; i < variables.length; i++) {
@@ -534,7 +540,7 @@ RemoteService.prototype.bind = function(callback){
 				if (typeof callback == "function") {
 					callback.call(null, proxy);
 				}
-		    });
+			});
 		});
 	}
 	return this;
@@ -552,7 +558,7 @@ var subscribe = function(service){
 		method: 'SUBSCRIBE',
 		headers: {
 			HOST: url.host,
-			CALLBACK: "<http://"+peer.hostname+":"+port+peer.prefix+"/events?usn="+service.USN+">", 
+			CALLBACK: "<http://"+peer.hostname+":"+port+peer.prefix+"/events?usn="+service.USN+">",
 			NT: "upnp:event"
 		}
 	},function(rsp){
@@ -566,7 +572,6 @@ var subscribe = function(service){
 		},(timeout-1)*1000);
 	}).on("error",function(err){
 		console.log("error in subscribe",err);
-		service.emit("error",err);
 	});
 	req.end();
 };
@@ -595,7 +600,6 @@ var renew = function(service){
 			},(timeout-1)*1000);
 		}).on("error",function(err){
 			console.log("error in renew",err);
-			service.emit("error",err);
 		});
 		req.end();
 	}
@@ -619,10 +623,8 @@ var unsubscribe = function(service){
 				SID: service.sid
 			}
 		},function(rsp){
-			
-		}).on("error",function(err){
-			console.log("error in unsubscibe",err);
-			service.emit("error",err);
+
+		}).on("error",function(){
 		});
 		req.end();
 		service.sid = null;
@@ -737,7 +739,7 @@ var handlePostControl = function(req,rsp,peer){
 							serviceType: service.type,
 							actionName: actionName
 						};
-						
+
 						try {
 							options.outputs = service.implementation[actionName].call(service,inputs) || {};
 						} catch (e) {
@@ -784,23 +786,23 @@ var handlePostEvent = function(req,rsp,peer){
 						}
 					}
 					service.emit("event",data);
-                    rsp.end();
+					rsp.end();
 				}
-                else {
-                    rsp.statusCode = 400;
-                    rsp.end("Request is not a valide XML message:"+(err && err.message ||""));
-                }
+				else {
+					rsp.statusCode = 400;
+					rsp.end("Request is not a valide XML message:"+(err && err.message ||""));
+				}
 			});
 		}
-        else {
-            rsp.statusCode = 404;
-            rsp.end("Service not found",'utf8');
-        }
+		else {
+			rsp.statusCode = 404;
+			rsp.end("Service not found",'utf8');
+		}
 	}
-    else {
-        rsp.statusCode = 400;
-        rsp.end("Parameter usn is missing or not valid",'utf8');
-    }
+	else {
+		rsp.statusCode = 400;
+		rsp.end("Parameter usn is missing or not valid",'utf8');
+	}
 };
 
 var handleSubscribeEvent = function(req,rsp,peer){
@@ -815,8 +817,8 @@ var handleSubscribeEvent = function(req,rsp,peer){
 			var sid = "uuid:"+UUID.v4();
 			var callbacks = req.headers.callback && req.headers.callback.replace(/[<|>]/g,"").split(",");
 			service.subscriptions[sid] = {
-					callbacks: callbacks,
-					seq: 0
+				callbacks: callbacks,
+				seq: 0
 			};
 			var timeout = req.headers.timeout || "Second-1800";
 			rsp.setHeader('DATE',new Date().toUTCString());
@@ -880,8 +882,8 @@ var notify = function(nts,peer,entity){
 		if (device.available) {
 			var headers = {
 				//'LOCATION': "http://"+peer.hostname+":"+port+device.descriptionURL,
-                'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
-                'SERVER': device.server,
+				'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
+				'SERVER': device.server,
 				'CONFIGID.UPNP.ORG': device.configId,
 				'NTS': nts
 			};
@@ -915,7 +917,7 @@ var respond = function(st,peer,address){
 			if (device.available) {
 				var headers = {
 					//'LOCATION': "http://"+peer.hostname+":"+port+device.descriptionURL,
-                    'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
+					'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
 					'SERVER': device.server,
 					'CONFIGID.UPNP.ORG': device.configId
 				};
@@ -943,7 +945,7 @@ var respond = function(st,peer,address){
 			if (device.available) {
 				var headers = {
 					//'LOCATION': "http://"+peer.hostname+":"+port+device.descriptionURL,
-                    'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
+					'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
 					'SERVER': device.server,
 					'CONFIGID.UPNP.ORG': device.configId,
 					'ST': ROOT_DEVICE,
@@ -959,7 +961,7 @@ var respond = function(st,peer,address){
 			if (device.available) {
 				var headers = {
 					//'LOCATION': "http://"+peer.hostname+":"+port+device.descriptionURL,
-                    'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
+					'LOCATION': "http://{{networkInterfaceAddress}}:"+port+device.descriptionURL,
 					'SERVER': device.server,
 					'CONFIGID.UPNP.ORG': device.configId,
 					'ST': st,
@@ -979,7 +981,7 @@ var respond = function(st,peer,address){
 						headers['USN'] = device.UDN+"::"+service.serviceType;
 						peer.ssdpPeer.reply(headers,address);
 					}
-				}				
+				}
 			}
 		}
 	}
@@ -997,10 +999,10 @@ var getHostname = function() {
 	}
 	return '0.0.0.0';
 
-    // this update allows the SSDP module to replace the {{networkInterfaceAddress}} placeholder with the actual
-    // IP Address of the corresponding Network Interface. In the old implementation the same address is used
-    // for all network interfaces. The old implementation is commented and will be removed in future releases
-    // return "{{networkInterfaceAddress}}";
+	// this update allows the SSDP module to replace the {{networkInterfaceAddress}} placeholder with the actual
+	// IP Address of the corresponding Network Interface. In the old implementation the same address is used
+	// for all network interfaces. The old implementation is commented and will be removed in future releases
+	// return "{{networkInterfaceAddress}}";
 };
 
 var httpRequest = function(/* options, body, callback */) {
@@ -1028,11 +1030,11 @@ var httpRequest = function(/* options, body, callback */) {
 		});
 	}).on("error", function(error) {
 		console.log("Error in http Request",error);
-        callback && callback(error);
-    }).on('timeout', function () {
-        req.abort();
-    });
-    req.setTimeout(2000);
+		callback && callback(error);
+	}).on('timeout', function () {
+		req.abort();
+	});
+	req.setTimeout(2000);
 	if (body) {
 		req.end(body);
 	} else {

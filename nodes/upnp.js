@@ -19,11 +19,14 @@ function registerRobot(peer, urn, service) {
         disappeared: false,
         urn: urn
     }).then(function (robot) {
-        console.log("creating", Object.keys(robot));
         var deferred = q.defer();
         robot.service.on("disappear", function () {
             robot.event.notify({topic: "Disappeared", payload: robot});
             robot.disappeared = true;
+        });
+        robot.service.on("error", function (err) {
+            console.log("Service error: ", err);
+            robot.event.notify({topic: "error", payload: err});
         });
         robot.service.bind(function (api) {
             robot.api = api;
@@ -36,75 +39,103 @@ function registerRobot(peer, urn, service) {
             };
             deferred.resolve(robot);
         });
-        robot.service.on("error", function (err) {
-            robot.event.notify({topic: "error", payload: err});
-        });
         robot.service.on("event", function (data) {
             robot.event.notify({topic: "notify", payload: data});
         });
         peer.once("closeServices", function (target) {
             if (!target || target === robot) {
-                console.log("closing peer services");
                 robot.service.removeAllListeners();
             }
         });
         return deferred.promise;
     });
 }
-function removeOld(urn, serial) {
-    return peerPromise.then(function (peer) {
-        if (!robots[urn][serial])
-            return peer;
-        return robots[urn][serial].then(function (robot) {
-            console.log("removing", Object.keys(robot));
-            peer.emit("closeServices", robot);
-            delete robots[urn][serial];
-            delete peer.remoteDevices[robot.service.device.UDN];
-            return peer;
-        });
+
+function RobotFinder(urn, serial, timeout) {
+    var self = this;
+    this.urn = urn;
+    this.serial = serial;
+    this.timeout = timeout;
+    this.defer = q.defer();
+    this.promise = this.defer.promise;
+    this.removeOld(urn,serial).then(function (peer) {
+        self.peer = peer;
+        self.find();
     });
 }
 
-function findRobot(urn, serial, timeout) {
-    var defer = q.defer(),
-        timer = setTimeout(function () {
-            delete robots[urn][serial];
-            defer.reject({
+RobotFinder.prototype = {
+    removeOld:function(urn,serial){
+        return peerPromise.then(function (peer) {
+            if (!robots[urn][serial])
+                return peer;
+            return robots[urn][serial].then(function (robot) {
+                peer.emit("closeServices", robot);
+                delete robots[urn][serial];
+                delete peer.remoteDevices[robot.service.device.UDN];
+                return peer;
+            });
+        });
+    },
+    find: function () {
+        this.setTimer();
+        this.waitForUrn();
+        this.watchForBindError();
+    },
+    setTimer: function () {
+        var self = this;
+        this.timer = setTimeout(function () {
+            delete robots[self.urn][self.serial];
+            self.defer.reject({
                 topic: "error",
                 statusCode: 403,
-                message: "Timed out waiting for device: " + serial + " on urn: " + urn
+                message: "Timed out waiting for device: " + self.serial + " on urn: " + self.urn
             });
-            timer = null;
-        }, timeout);
-    removeOld(urn, serial).then(function (peer) {
-        peer.once(urn, function (service) {
-            console.log("urn", urn,service.device.serialNumber,serial);
-            registerRobot(peer, urn, service);
-            if (!timer || service.device.serialNumber !== serial)
-                return;
-            clearTimeout(timer);
-            defer.resolve(robots[urn][serial]);
-            timer = null;
+            self.off();
+        },this.timeout);
+    },
+    waitForUrn:function(){
+        var self=this;
+        this.peer.on(urn, function (service) {
+            registerRobot(self.peer, self.urn, service);
+            if (self.timer && service.device.serialNumber === self.serial){
+                self.defer.resolve(robots[self.urn][self.serial]);
+                self.off();                
+            }
         });
-    });
-    return defer.promise;
-}
+    },
+    watchForBindError:function(){
+        var self=this;
+        this.peer.once("deviceBindError", function (err) {
+            delete robots[self.urn][self.serial];
+            self.defer.reject({
+                topic: "error",
+                statusCode: 500,
+                message: "Error Binding Device: " + err.message
+            });
+            self.off();
+        });
+    },
+    off:function(){
+        this.peer.removeAllListeners(this.urn);
+        this.peer.removeAllListeners("deviceBindError");
+        clearTimeout(this.timer);
+        this.timer=null;
+    }
+};
 
 
 function createPeer(server, endPoint) {
-    console.log("creating peer");
     var defer = q.defer(),
         peer = upnp.createPeer({
             prefix: endPoint,
             server: server
         }).on("ready", function (peer) {
-            peer.on("error", function () {
-                console.log("error in peer, level 2: ", err);
-            }).on("found", function () {
+            peer.on("found", function () {
                 console.log("Found", arguments);
             });
             defer.resolve(peer);
-        }).on("error", function () {
+        }).on("error", function (err) {
             console.log("Error in Peer", err);
         }).on("close", function () {
             console.log("High level close");
@@ -234,7 +265,7 @@ module.exports = {
     waitForRobot: function (urn, serial, timeout) {
         if (!peerPromise)
             return q.reject({topic: "error", error: new Error("UPNP peer service not created")});
-        return findRobot(urn, serial, timeout);
+        return (new RobotFinder(urn, serial, timeout)).promise;
     },
     triageError: triageError,
     throwNodeError: throwNodeError,
