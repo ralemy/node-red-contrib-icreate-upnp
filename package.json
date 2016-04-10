@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-icreate-upnp",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Node-RED contribution that adds nodes control of an iRobot iCreate2 that is been setup as a upnp device",
   "scripts": {
     "postversion": "git push && git push --tags && npm publish"
