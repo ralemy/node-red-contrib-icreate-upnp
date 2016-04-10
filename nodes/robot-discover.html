@@ -1,0 +1,52 @@
+<script type="text/javascript">
+    RED.nodes.registerType('robot-discover', {
+        category: 'iCreate',
+        color: '#C0DEED',
+        defaults: {
+            upnp: {value: "", type: "upnp-instance", required: true},
+            name: {value: ""},
+            deviceSerial: {value: "", required: true},
+            timeout: {value: "1"}
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: "robot.png",
+        label: function () {
+            return this.name || "Discover Robot";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="robot-discover">
+    <div class="form-row">
+        <label for="node-input-upnp"><i class="icon-tag"></i> Service</label>
+        <input type="text" id="node-input-upnp" placeholder="Upnp Service">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+     <div class="form-row">
+         <label for="node-input-deviceSerial"><i class="fa fa-barcode"></i> Serial</label>
+         <input type="text" id="node-input-deviceSerial" placeholder="Device Serial Filter (regex)">
+     </div>
+     <div class="form-row">
+         <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout</label>
+         <input type="text" id="node-input-timeout" placeholder="Timeout (seconds)">
+     </div>
+
+
+</script>
+
+<script type="text/x-red" data-help-name="robot-discover">
+    <p>Discovers an ICreate2 Robot in the network. Use a regular expression pattern to filter a specific device or set of devices based on its serial.</p>
+    <ul> There are three outputs:
+    <li>The first output sends the device object, which has an api key that contains the device api, and an event key which is a promise that gets notified when an event happens on the device.
+    the message topic is set to "upnpDevice" and msg.payload and msg.device are set to device</li>
+    <li>The second output sends an object each time an event is captured from the device. this contains the "event" as msg.topic, the event data as msg.payload, and the device as msg.device</li>
+    <li>The Third output is for debugging and status reporting. the msg.payload contains the message, and msg.topic can be "success", "warning", or "error"</li>
+    </ul>
+
+
+
+</script>

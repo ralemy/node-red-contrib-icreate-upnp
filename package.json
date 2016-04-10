@@ -1,0 +1,36 @@
+{
+  "name": "node-red-contrib-icreate-upnp",
+  "version": "1.0.0",
+  "description": "Node-RED contribution that adds nodes control of an iRobot iCreate2 that is been setup as a upnp device",
+  "scripts": {
+    "postversion": "git push && git push --tags && npm publish"
+  },
+  "keywords": [
+    "STEM",
+    "iCreate2",
+    "iRobot",
+    "Roomba",
+    "UPNP",
+    "Node-RED"
+  ],
+  "node-red": {
+    "nodes": {
+      "robot-discover": "nodes/robot-discover.js",
+      "robot-status":"nodes/robot-status.js",
+      "move-robot":"nodes/move-robot.js",
+      "turn-robot":"nodes/turn-robot.js",
+      "upnp-service":"nodes/upnp-service.js"
+    }
+  },
+  "author": {
+    "name": "Reza Alemy"
+  },
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "lodash": "^4.6.1",
+    "peer-upnp": "0.0.5",
+    "q": "^1.4.1",
+    "serialport": "^2.0.6"
+  }
+}

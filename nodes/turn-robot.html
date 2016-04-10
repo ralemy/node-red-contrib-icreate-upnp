@@ -1,0 +1,43 @@
+<script type="text/javascript">
+    RED.nodes.registerType('turn-robot',{
+        category: 'iCreate',
+        color: '#efeb6d',
+        defaults: {
+            name: {value:""},
+            angle:{value:10,required:true, validate:RED.validators.number()}
+        },
+        inputs:1,
+        outputs:2,
+        icon: "robot.png",
+        label: function() {
+            return this.name||("Turn " + this.angle + " degrees");
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="turn-robot">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-angle"><i class="icon-tag"></i> Angle (deg)</label>
+        <input type="number" id="node-input-angle" placeholder="Angle in Degrees" min="10">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="turn-robot">
+    <h3>Turns the robot forward by specified amount</h3>
+    <p> Expects the robot Api to be in the <code>msg.robot</code> object. This can be achieved by placing the node
+    downstream to a robot-discover node.</p>
+    <p> The angle to rotate is taken from <code>msg.payload.angle</code>, if such property is not present, it is
+    taken from the node's configuration</p>
+    <p> Only turns counter-clockwise. clockwise (negative) turn is not supported at MVP and is transformed into counter-clockwise
+    rotation. Angle is specified in
+    degrees and rounded to the nearest integer. If more than 360, it only turns by the reminder of the division of angle
+    value over 360. In other words, angle of 370 will result in 10 degree rotation, and angle of -20 will result in 340
+    degree rotation counter-clockwise</p>
+    <p> The first output will have a <code>msg.payload.angle</code> specifying the actual angle turned.</p>
+    <p> The second output will have a <code>msg.topic</code> of "success" or "error" along with a human-readable
+    message in <code>msg.payload</code> describing the result of the operation</p>
+</script>

@@ -1,0 +1,44 @@
+<script type="text/javascript">
+    RED.nodes.registerType('upnp-instance', {
+        category: 'config',
+        defaults: {
+            port: {value: "8090", required: true},
+            prefix: {value: "/upnp", required: true},
+            domain: {value: "schemas-impinj-com", required: true},
+            serviceType: {value: "SVLRobot", required: true},
+            serviceVersion: {value: "1", required: true}
+        },
+        label: function () {
+            return [this.domain, this.serviceType, this.serviceVersion].join(":");
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="upnp-instance">
+ <div class="form-row">
+     <label for="node-input-port"><i class="fa fa-globe"></i> Port</label>
+     <input type="text" id="node-config-input-port" placeholder="UPNP Port">
+ </div>
+ <div class="form-row">
+     <label for="node-input-prefix"><i class="fa fa-globe"></i> Prefix</label>
+     <input type="text" id="node-config-input-prefix" placeholder="UPNP Prefix">
+ </div>
+ <div class="form-row">
+     <label for="node-input-domain"><i class="fa fa-globe"></i> Domain</label>
+     <input type="text" id="node-config-input-domain" placeholder="UPNP Domain">
+ </div>
+ <div class="form-row">
+     <label for="node-input-serviceType"><i class="fa fa-steam"></i> Type</label>
+     <input type="text" id="node-config-input-serviceType" placeholder="UPNP Type">
+ </div>
+ <div class="form-row">
+     <label for="node-input-serviceVersion"><i class="fa fa-tag"></i> Version</label>
+     <input type="text" id="node-config-input-serviceVersion" placeholder="UPNP Version">
+ </div>
+</script>
+
+<script type="text/x-red" data-help-name="upnp-instance">
+    <p>Keeps Information about a UPNP service</p>
+
+
+</script>

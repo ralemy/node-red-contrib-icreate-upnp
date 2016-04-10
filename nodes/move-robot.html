@@ -1,0 +1,40 @@
+<script type="text/javascript">
+    RED.nodes.registerType('move-robot',{
+        category: 'iCreate',
+        color: '#efeb6d',
+        defaults: {
+            name: {value:""},
+            distance:{value:100,required:true, validate:RED.validators.number()}
+        },
+        inputs:1,
+        outputs:2,
+        icon: "robot.png",
+        label: function() {
+            return this.name||("Move " + this.distance);
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="move-robot">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-distance"><i class="icon-tag"></i> Distance (mm)</label>
+        <input type="number" id="node-input-distance" placeholder="Distance in mm" min="100">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="move-robot">
+    <h3>Moves the robot forward by specified amount</h3>
+    <p> Expects the robot Api to be in the <code>msg.robot</code> object. This can be achieved by placing the node
+    downstream to a robot-discover node.</p>
+    <p> The distance to move is taken from <code>msg.payload.distance</code>, if such property is not present, it is
+    taken from the node's configuration</p>
+    <p> Only moves forward. backward (negative) movement is not supported at MVP. distance is specified in
+    millimeters and rounded to the nearest integer</p>
+    <p> The first output will have a <code>msg.payload.distance</code> specifying the actual distance traveled.</p>
+    <p> The second output will have a <code>msg.topic</code> of "success" or "error" along with a human-readable
+    message in <code>msg.payload</code> describing the result of the operation</p>
+</script>

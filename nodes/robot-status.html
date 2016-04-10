@@ -1,0 +1,31 @@
+<script type="text/javascript">
+    RED.nodes.registerType('robot-status',{
+        category: 'iCreate',
+        color: '#efeb6d',
+        defaults: {
+            name: {value:""}
+        },
+        inputs:1,
+        outputs:2,
+        icon: "robot.png",
+        label: function() {
+            return this.name||"Robot Status";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="robot-status">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="robot-status">
+    <h3>Gets the current Status of the Robot</h3>
+    <p> Expects the robot Api to be in the <code>msg.robot</code> object. This can be achieved by placing the node
+    downstream to a robot-discover node.</p>
+    <p> The first output will have a <code>msg.payload.status</code> specifying the status of the robot.</p>
+    <p> The second output will have a <code>msg.topic</code> of "success" or "error" along with a human-readable
+    message in <code>msg.payload</code> describing the result of the operation</p>
+</script>
