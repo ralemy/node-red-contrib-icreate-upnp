@@ -28,7 +28,11 @@
     "lodash": "^4.6.1",
     "peer-upnp": "0.0.5",
     "q": "^1.4.1",
-    "serialport": "^2.0.6"
+    "serialport": "^2.0.6",
+    "xml2js": "git+https://github.com/fraunhoferfokus/node-xml2js.git",
+    "peer-ssdp": "0.0.5",
+    "ejs": "0.8.4",
+    "node-uuid": "1.4.0"
   },
   "main": "index.js",
   "repository": {

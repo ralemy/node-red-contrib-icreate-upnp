@@ -6,7 +6,7 @@
 var peerPromise = null;
 var robots = {};
 
-var upnp = require("peer-upnp"),
+var upnp = require("./peer-upnp"),
     q = require("q"),
     _ = require("lodash"),
     http = require("http");
