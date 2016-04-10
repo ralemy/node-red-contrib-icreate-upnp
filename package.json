@@ -26,7 +26,6 @@
   "license": "MIT",
   "dependencies": {
     "lodash": "^4.6.1",
-    "peer-upnp": "0.0.5",
     "q": "^1.4.1",
     "serialport": "^2.0.6",
     "xml2js": "git+https://github.com/fraunhoferfokus/node-xml2js.git",
