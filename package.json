@@ -22,15 +22,21 @@
       "upnp-service": "nodes/upnp-service.js"
     }
   },
-  "author": {
-    "name": "Reza Alemy"
-  },
+  "author": "Reza Alemy",
   "license": "MIT",
-  "readmeFilename": "README.md",
   "dependencies": {
     "lodash": "^4.6.1",
     "peer-upnp": "0.0.5",
     "q": "^1.4.1",
     "serialport": "^2.0.6"
-  }
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ralemy/node-red-contrib-icreate-upnp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ralemy/node-red-contrib-icreate-upnp/issues"
+  },
+  "homepage": "https://github.com/ralemy/node-red-contrib-icreate-upnp#readme"
 }
