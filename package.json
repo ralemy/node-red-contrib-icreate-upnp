@@ -15,7 +15,7 @@
   ],
   "node-red": {
     "nodes": {
-      "robot-discover": "nodes/discover.js",
+      "find-robot": "nodes/find-robot.js",
       "robot-status": "nodes/robot-status.js",
       "move-robot": "nodes/move-robot.js",
       "turn-robot": "nodes/turn-robot.js",
