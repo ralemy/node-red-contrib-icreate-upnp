@@ -4,34 +4,36 @@
  */
 module.exports = function (RED) {
     "use strict";
-    var q = require("q"),
-        lib = require("./upnp");
+    const q = require("q"),
+        Robot = require("./lib/robot"),
+        lib = require("./lib/util");
 
     function moveRobot(robot, distance) {
-        var defer = q.defer();
-        robot.progress(lib.Robot.waitFor.bind(robot, "location", defer));
-        return robot.execute("MoveTo", {newLocation: distance}, defer);
+        const defer = q.defer();
+        robot.progress(Robot.waitFor.bind(robot, "location", defer));
+        robot.execute("MoveTo", {newLocation: distance}, Robot.processResult.bind(Robot,defer));
+        return defer.promise;
     }
 
     function MoveRobotNode(config) {
         RED.nodes.createNode(this, config);
-        var node = this;
+        const node = this;
 
-        this.on("input", function (msg) {
-            var robot = lib.Robot.getRobot(msg, node),
+        this.on("input", (msg) => {
+            const robot = lib.Robot.getRobot(msg, node),
                 distance = lib.Robot.getNumber(msg, config, "distance");
             if (robot)
-                moveRobot(robot, distance).then(function (result) {
+                moveRobot(robot, distance).then((result)=> {
                         node.send([
                             lib.extend(msg, {
                                 topic: "MoveRobot",
                                 payload: result
                             }), {
                                 topic: "success",
-                                payload: "moved Robot " + result.location + " mm"
+                                payload: `moved Robot ${result.location} mm`
                             }])
                     })
-                    .progress(lib.Robot.sendProgress.bind(lib.Robot, node))
+                    .progress(Robot.sendProgress.bind(Robot, node))
                     .catch(lib.throwRedError.bind(lib, "Error Moving Robot", msg, node));
         });
     }
