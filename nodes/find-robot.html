@@ -1,7 +1,7 @@
 <script type="text/javascript">
-    RED.nodes.registerType('robot-discover', {
+    RED.nodes.registerType('find-robot', {
         category: 'iCreate',
-        color: '#C0DEED',
+        color: '#3DD271',
         defaults: {
             upnp: {value: "", type: "upnp-instance", required: true},
             name: {value: ""},
@@ -17,7 +17,7 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="robot-discover">
+<script type="text/x-red" data-template-name="find-robot">
     <div class="form-row">
         <label for="node-input-upnp"><i class="icon-tag"></i> Service</label>
         <input type="text" id="node-input-upnp" placeholder="Upnp Service">
@@ -38,7 +38,7 @@
 
 </script>
 
-<script type="text/x-red" data-help-name="robot-discover">
+<script type="text/x-red" data-help-name="find-robot">
     <p>Discovers an ICreate2 Robot in the network. Use a regular expression pattern to filter a specific device or set of devices based on its serial.</p>
     <ul> There are three outputs:
     <li>The first output sends the device object, which has an api key that contains the device api, and an event key which is a promise that gets notified when an event happens on the device.

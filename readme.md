@@ -17,4 +17,6 @@ upnp:{
 }
 ```
 
+See included <code>settings.js</code> file for an example.
+
 **Note** this contribution library adds a delay to process.exit() so that the UPNP peer can cleanly advertise its close to all peers and unregister from their services. as a result, if you restart node-red in an IDE like Intellij Idea, you may get an "address in use" error. Simply wait a couple of seconds and restart your installation again.
